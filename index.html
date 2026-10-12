@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nivelando tu Vida: Métodos Anticonceptivos 3D</title>
+    <!-- Three.js para gráficos 3D (Carga local / respaldo CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0f172a;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        /* UI de Menú de Inicio */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(20, 83, 45, 0.95));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+        .modal-card {
+            background: rgba(255, 253, 235, 0.98);
+            border: 4px solid #b45309;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 550px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            color: #1e293b;
+        }
+        .modal-card h1 {
+            color: #14532d;
+            font-size: 28px;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        .modal-card p {
+            font-size: 16px;
+            color: #334155;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 700;
+            color: #166534;
+            margin-bottom: 8px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus {
+            border-color: #166534;
+        }
+        .avatar-selection {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .avatar-opt {
+            background: #f1f5f9;
+            border: 3px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .avatar-opt.selected {
+            border-color: #166534;
+            background: #dcfce7;
+            color: #166534;
+            transform: scale(1.05);
+        }
+        .btn-magical {
+            background: linear-gradient(135deg, #166534, #15803d);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(22, 101, 52, 0.4);
+            transition: transform 0.2s, background 0.2s;
+            width: 100%;
+        }
+        .btn-magical:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #14532d, #166534);
+        }
+
+        /* HUD Superior en Juego */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            z-index: 5;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+        }
+        .hud-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            border: 2px solid #34d399;
+            border-radius: 14px;
+            padding: 10px 20px;
+            color: #f8fafc;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            pointer-events: auto;
+        }
+        #instruction-banner {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            display: none;
+            background: rgba(20, 83, 45, 0.9);
+            border: 2px solid #4ade80;
+            color: #fff;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            animation: pulse 2s infinite;
+            text-align: center;
+        }
+        @keyframes pulse {
+            0% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.03); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+
+        /* Modal de Preguntas (Pergamino) */
+        #quiz-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .quiz-card {
+            background: #fffbeb;
+            border: 5px solid #92400e;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 620px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+            position: relative;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .quiz-img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            border: 2px solid #d97706;
+            background: #cbd5e1;
+        }
+        .quiz-card h2 {
+            color: #78350f;
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+        .quiz-card .question-text {
+            font-size: 16px;
+            color: #292524;
+            margin-bottom: 15px;
+            line-height: 1.4;
+            font-weight: 600;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .option-btn {
+            background: #fef3c7;
+            border: 2px solid #d97706;
+            border-radius: 10px;
+            padding: 10px 15px;
+            text-align: left;
+            font-size: 15px;
+            font-weight: 600;
+            color: #78350f;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-btn:hover {
+            background: #fde68a;
+            transform: translateX(5px);
+        }
+        .feedback-box {
+            display: none;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .feedback-box.correct {
+            background: #dcfce7;
+            border: 2px solid #22c55e;
+            color: #166534;
+        }
+        .feedback-box.incorrect {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            color: #991b1b;
+        }
+        .btn-action {
+            margin-top: 12px;
+            background: #b45309;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            display: none;
+            width: 100%;
+        }
+        .btn-action:hover {
+            background: #92400e;
+        }
+
+        /* Pantalla Final / Graduación */
+        #end-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 30;
+            background: rgba(15, 23, 42, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Contenedor 3D -->
+    <div id="canvas-container"></div>
+
+    <!-- Pantalla de Inicio -->
+    <div id="start-screen">
+        <div class="modal-card">
+            <h1>🌲 Nivelando tu Vida 🌲</h1>
+            <p>Aventura en el Bosque 3D: Métodos Anticonceptivos y Salud Sexual Responsable.</p>
+            <div class="input-group">
+                <label for="player-name">Tu Nombre o Apodo:</label>
+                <input type="text" id="player-name" placeholder="Ej. Alex" value="Explorador/a">
+            </div>
+            <div class="input-group">
+                <label>Elige tu Estilo de Avatar:</label>
+                <div class="avatar-selection">
+                    <div class="avatar-opt selected" onclick="selectAvatar('Heroe', this)">🛡️ Héroe</div>
+                    <div class="avatar-opt" onclick="selectAvatar('Ninja', this)">🥷 Ninja</div>
+                    <div class="avatar-opt" onclick="selectAvatar('Mago', this)">🧙‍♂️ Mago</div>
+                </div>
+            </div>
+            <button class="btn-magical" onclick="startGame()">¡Comenzar Aventura! 🚀</button>
+        </div>
+    </div>
+
+    <!-- HUD Superior -->
+    <div id="hud">
+        <div class="hud-panel" id="hud-name">👤 Explorador</div>
+        <div class="hud-panel" id="hud-score">⭐ Puntos: 0</div>
+        <div class="hud-panel" id="hud-progress">📍 Estación 1 / 6</div>
+    </div>
+
+    <!-- Instrucción inferior -->
+    <div id="instruction-banner">✨ ¡Responde correctamente para que tu personaje avance en el sendero despejado! ✨</div>
+
+    <!-- Modal de Preguntas / Pergamino -->
+    <div id="quiz-modal">
+        <div class="quiz-card">
+            <img id="quiz-image" class="quiz-img" src="" alt="Ilustración educativa">
+            <h2 id="quiz-title">Estación 1</h2>
+            <div class="question-text" id="quiz-question">Pregunta aquí...</div>
+            <div class="options-container" id="quiz-options"></div>
+            <div class="feedback-box" id="quiz-feedback"></div>
+            <button class="btn-action" id="btn-action-btn" onclick="handleModalAction()">Continuar Camino 🌲</button>
+        </div>
+    </div>
+
+    <!-- Pantalla Final -->
+    <div id="end-screen">
+        <div class="modal-card" style="text-align: center;">
+            <h1 style="color: #166534;">🎉 ¡Aventura Completada! 🎉</h1>
+            <p id="final-message">¡Has recorrido con éxito el Sendero del Bosque y demostrado gran información valiosa para tu salud sexual y bienestar!</p>
+            <div style="font-size: 24px; font-weight: bold; color: #b45309; margin-bottom: 20px;" id="final-score">Puntuación Final: 0 ⭐</div>
+            <button class="btn-magical" onclick="location.reload()">Jugar de Nuevo 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        // --- BANCO DE PREGUNTAS POR ESTACIÓN ---
+        const stationsData = [
+            {
+                title: "Estación 1: El Escudo Protector 🛡️",
+                image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=600",
+                questions: [
+                    {
+                        q: "¿Cuál es el ÚNICO método anticonceptivo que además de prevenir embarazos no planeados, protege eficazmente contra las Infecciones de Transmisión Sexual (ITS)?",
+                        options: [
+                            { text: "a) Las pastillas anticonceptivas diarias", correct: false },
+                            { text: "b) El condón (masculino o femenino)", correct: true },
+                            { text: "c) La inyección mensual", correct: false }
+                        ],
+                        explanation: "¡Correcto! El preservativo o condón actúa como una barrera física que frena el paso de fluidos, protegiendo doblemente contra ITS y embarazos."
+                    },
+                    {
+                        q: "Si una persona desea evitar el contagio de ITS durante una relación sexual, ¿qué método es indispensable utilizar?",
+                        options: [
+                            { text: "a) Implante subdérmico", correct: false },
+                            { text: "b) Pastilla de emergencia", correct: false },
+                            { text: "c) Preservativo / Condón", correct: true }
+                        ],
+                        explanation: "¡Exacto! Los métodos hormonales evitan embarazos pero no protegen contra virus o bacterias de ITS; solo el condón brinda esta protección."
+                    }
+                ]
+            },
+            {
+                title: "Estación 2: Eficacia Hormonal 💊",
+                image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=600",
+                questions: [
+                    {
+                        q: "¿Cómo funcionan los métodos hormonales como las pastillas, el parche o la inyección?",
+                        options: [
+                            { text: "a) Crean una barrera física contra las bacterias", correct: false },
+                            { text: "b) Regulan las hormonas para evitar la ovulación y espesan el moco cervical", correct: true },
+                            { text: "c) Eliminan por completo el ciclo menstrual para siempre", correct: false }
+                        ],
+                        explanation: "¡Muy bien! Inhiben temporalmente la liberación del óvulo (ovulación) e impiden que los espermatozoides lleguen a él."
+                    },
+                    {
+                        q: "¿Qué sucede principalmente en el cuerpo al utilizar anticonceptivos hormonales combinados?",
+                        options: [
+                            { text: "a) Se bloquea la ovulación cada mes de forma reversible", correct: true },
+                            { text: "b) Se produce esterilidad permanente e irreversible", correct: false },
+                            { text: "c) Aumentan las defensas inmunológicas del sistema", correct: false }
+                        ],
+                        explanation: "¡Correcto! Son altamente eficaces al impedir que se libere el óvulo, y su efecto se revierte al suspenderlos bajo supervisión médica."
+                    }
+                ]
+            },
+            {
+                title: "Estación 3: La Doble Protección 🤝",
+                image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=600",
+                questions: [
+                    {
+                        q: "¿A qué se le conoce como 'Doble Protección' en la salud sexual adolescente?",
+                        options: [
+                            { text: "a) Usar dos condones al mismo tiempo para mayor seguridad", correct: false },
+                            { text: "b) Combinar un método anticonceptivo hormonal/DIU con el uso correcto del condón", correct: true },
+                            { text: "c) Tomar dos pastillas de emergencia después de cada relación", correct: false }
+                        ],
+                        explanation: "¡Exacto! Usar un método anticonceptivo junto con el condón ofrece la máxima eficacia contra embarazos y protege contra ITS."
+                    },
+                    {
+                        q: "¿Por qué se recomienda la estrategia de la doble protección en la juventud?",
+                        options: [
+                            { text: "a) Porque cubre simultáneamente la prevención de embarazos y la prevención de ITS", correct: true },
+                            { text: "b) Porque es un requisito obligatorio por ley", correct: false },
+                            { text: "c) Porque elimina la necesidad de acudir al médico", correct: false }
+                        ],
+                        explanation: "¡Muy bien! Ningún método hormonal protege contra ITS, por lo que unirlos al condón cubre ambos frentes de salud."
+                    }
+                ]
+            },
+            {
+                title: "Estación 4: El Mito de la Pastilla de Emergencia ⏱️",
+                image: "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?q=80&w=600",
+                questions: [
+                    {
+                        q: "Sobre la pastilla anticonceptiva de emergencia (o del día después), ¿cuál afirmación es VERDADERA?",
+                        options: [
+                            { text: "a) Debe usarse como método anticonceptivo regular de uso frecuente cada semana", correct: false },
+                            { text: "b) Es un anticonceptivo de uso exclusivo para imprevistos o fallas de método, con alta carga hormonal", correct: true },
+                            { text: "c) Es un método abortivo que interrumpe cualquier embarazo avanzado", correct: false }
+                        ],
+                        explanation: "¡Correcto! Es un recurso de emergencia debido a su fuerte carga hormonal; no previene ITS y su abuso desregula el ciclo menstrual."
+                    },
+                    {
+                        q: "¿Cuál de las siguientes opciones describe el uso adecuado de la pastilla de emergencia?",
+                        options: [
+                            { text: "a) Usarla de manera rutinaria después de cada fin de semana", correct: false },
+                            { text: "b) Reservarla únicamente para situaciones imprevistas como la ruptura de un condón", correct: true },
+                            { text: "c) Tomarla antes de tener relaciones sexuales para prevenir ITS", correct: false }
+                        ],
+                        explanation: "¡Exacto! Al tener una dosis hormonal muy alta, no debe sustituir a los anticonceptivos de uso regular."
+                    }
+                ]
+            },
+            {
+                title: "Estación 5: Los Métodos de Larga Duración (LARCs) ⏳",
+                image: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=600",
+                questions: [
+                    {
+                        q: "¿Qué son el DIU (dispositivo intrauterino) y el implante subdérmico?",
+                        options: [
+                            { text: "a) Métodos reversibles de larga duración colocados por personal de salud", correct: true },
+                            { text: "b) Métodos quirúrgicos definitivos que no se pueden retirar", correct: false },
+                            { text: "c) Tratamientos naturales basados en el calendario", correct: false }
+                        ],
+                        explanation: "¡Exacto! Son altamente eficaces, duran varios años y pueden retirarse en cualquier momento si la persona desea planear un embarazo a futuro."
+                    },
+                    {
+                        q: "Una ventaja principal de los métodos LARC (como el implante o el DIU) es que:",
+                        options: [
+                            { text: "a) Requieren que la persona los recuerde y tome diariamente", correct: false },
+                            { text: "b) Ofrecen protección continua por años sin depender de una toma diaria", correct: true },
+                            { text: "c) Protegen automáticamente contra las Infecciones de Transmisión Sexual", correct: false }
+                        ],
+                        explanation: "¡Muy bien! Al ser de larga duración y colocación profesional, evitan los olvidos cotidianos, aunque no previenen ITS."
+                    }
+                ]
+            },
+            {
+                title: "Estación 6: Consentimiento y Comunicación 💬",
+                image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=600",
+                questions: [
+                    {
+                        q: "¿Qué papel juega la comunicación en pareja al elegir un método anticonceptivo?",
+                        options: [
+                            { text: "a) Ninguno, eso le corresponde decidirlo a una sola persona", correct: false },
+                            { text: "b) Es fundamental para tomar decisiones informadas, consensuadas y de mutuo acuerdo", correct: true },
+                            { text: "c) Solo sirve para discutir y generar conflictos", correct: false }
+                        ],
+                        explanation: "¡Excelente! La salud sexual responsable se basa en el respeto mutuo, la comunicación abierta y el consentimiento libre en todo momento."
+                    },
+                    {
+                        q: "¿Qué significa el consentimiento en el contexto de la salud sexual y las relaciones?",
+                        options: [
+                            { text: "a) Estar de acuerdo de manera libre, consciente y entusiasta en cada paso", correct: true },
+                            { text: "b) Aceptar algo por presión de los amigos o de la pareja", correct: false },
+                            { text: "c) No comunicar lo que uno siente por pena", correct: false }
+                        ],
+                        explanation: "¡Correcto! El consentimiento es siempre voluntario, claro, actual y puede retirarse en cualquier momento."
+                    }
+                ]
+            }
+        ];
+
+        let currentStationIndex = 0;
+        let score = 0;
+        let playerName = "Explorador";
+        let playerType = "Heroe";
+        let isWalking = false;
+        let walkProgress = 0;
+        let currentQuestionObj = null;
+        let answeredCorrectly = false;
+
+        // --- CONFIGURACIÓN DE THREE.JS ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0f172a);
+        scene.fog = new THREE.FogExp2(0x0f172a, 0.025);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 12, -14);
+        camera.lookAt(0, 2, 5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xd9f99d, 1.2);
+        dirLight.position.set(20, 40, -20);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        // --- ENTORNO DE BOSQUE Y ÁRBOLES EN LOS BORDES ---
+        const groundGeo = new THREE.PlaneGeometry(150, 150);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.9 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        function createTree(x, z) {
+            const treeGroup = new THREE.Group();
+            const trunkGeo = new THREE.CylinderGeometry(0.6, 0.8, 5, 6);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 2.5;
+            trunk.castShadow = true;
+            treeGroup.add(trunk);
+
+            const leavesGeo = new THREE.ConeGeometry(2.5, 6, 6);
+            const leavesMat = new THREE.MeshStandardMaterial({ color: 0x065f46 });
+            const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+            leaves.position.y = 6.5;
+            leaves.castShadow = true;
+            treeGroup.add(leaves);
+
+            treeGroup.position.set(x, 0, z);
+            scene.add(treeGroup);
+        }
+
+        for (let z = -60; z <= 60; z += 6) {
+            createTree(-14 - Math.random() * 8, z);
+            createTree(14 + Math.random() * 8, z);
+            createTree(-22 - Math.random() * 10, z + 3);
+            createTree(22 + Math.random() * 10, z + 3);
+        }
+
+        // --- CAMINO DE PIEDRAS DESPEJADO ---
+        const pathPoints = [
+            new THREE.Vector3(0, 0.05, -10),
+            new THREE.Vector3(0, 0.05, 0),
+            new THREE.Vector3(0, 0.05, 12),
+            new THREE.Vector3(0, 0.05, 24),
+            new THREE.Vector3(0, 0.05, 36),
+            new THREE.Vector3(0, 0.05, 48),
+            new THREE.Vector3(0, 0.05, 60)
+        ];
+
+        const pathCurve = new THREE.CatmullRomCurve3(pathPoints);
+
+        const stoneGeo = new THREE.CylinderGeometry(1.2, 1.4, 0.1, 7);
+        const stoneMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9 });
+        
+        for (let t = 0; t <= 1; t += 0.02) {
+            const pt = pathCurve.getPoint(t);
+            const stone = new THREE.Mesh(stoneGeo, stoneMat);
+            stone.position.set(pt.x + (Math.random() - 0.5) * 0.3, 0.03, pt.z + (Math.random() - 0.5) * 0.3);
+            stone.rotation.y = Math.random() * Math.PI;
+            stone.scale.set(1 + Math.random() * 0.3, 1, 0.8 + Math.random() * 0.4);
+            scene.add(stone);
+        }
+
+        // --- PERSONAJE 3D ---
+        const characterGroup = new THREE.Group();
+
+        const bodyGeo = new THREE.BoxGeometry(0.8, 1.2, 0.5);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2563eb });
+        const torso = new THREE.Mesh(bodyGeo, bodyMat);
+        torso.position.y = 1.6;
+        torso.castShadow = true;
+        characterGroup.add(torso);
+
+        const headGeo = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xfde047 });
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.y = 2.5;
+        head.castShadow = true;
+        characterGroup.add(head);
+
+        const limbMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+        
+        const leftLegGeo = new THREE.BoxGeometry(0.3, 1, 0.3);
+        const leftLeg = new THREE.Mesh(leftLegGeo, limbMat);
+        leftLeg.position.set(-0.25, 0.7, 0);
+        characterGroup.add(leftLeg);
+
+        const rightLegGeo = new THREE.BoxGeometry(0.3, 1, 0.3);
+        const rightLeg = new THREE.Mesh(rightLegGeo, limbMat);
+        rightLeg.position.set(0.25, 0.7, 0);
+        characterGroup.add(rightLeg);
+
+        const leftArmGeo = new THREE.BoxGeometry(0.25, 0.9, 0.25);
+        const leftArm = new THREE.Mesh(leftArmGeo, limbMat);
+        leftArm.position.set(-0.6, 1.6, 0);
+        characterGroup.add(leftArm);
+
+        const rightArmGeo = new THREE.BoxGeometry(0.25, 0.9, 0.25);
+        const rightArm = new THREE.Mesh(rightArmGeo, limbMat);
+        rightArm.position.set(0.6, 1.6, 0);
+        characterGroup.add(rightArm);
+
+        characterGroup.position.copy(pathCurve.getPoint(0));
+        scene.add(characterGroup);
+
+        // --- ESTACIONES (CRISTALES) ---
+        const stationMeshes = [];
+        const crystalGeo = new THREE.OctahedronGeometry(0.8, 0);
+
+        pathPoints.slice(1).forEach((pt, index) => {
+            const crystalMat = new THREE.MeshStandardMaterial({
+                color: index === 0 ? 0x34d399 : 0x94a3b8,
+                emissive: index === 0 ? 0x059669 : 0x1e293b,
+                roughness: 0.2,
+                metalness: 0.8
+            });
+            const crystal = new THREE.Mesh(crystalGeo, crystalMat);
+            crystal.position.copy(pt);
+            crystal.position.y += 1.2;
+            crystal.userData = { index: index };
+            scene.add(crystal);
+            stationMeshes.push(crystal);
+        });
+
+        // --- FUNCIONES DE JUEGO ---
+        function selectAvatar(type, element) {
+            document.querySelectorAll('.avatar-opt').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            playerType = type;
+            if (type === 'Heroe') bodyMat.color.setHex(0x2563eb);
+            if (type === 'Ninja') bodyMat.color.setHex(0x334155);
+            if (type === 'Mago') bodyMat.color.setHex(0x7c3aed);
+        }
+
+        function startGame() {
+            const nameInput = document.getElementById('player-name').value.trim();
+            if (nameInput) playerName = nameInput;
+
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('hud').style.display = 'flex';
+            document.getElementById('instruction-banner').style.display = 'block';
+
+            document.getElementById('hud-name').innerText = `👤 ${playerName} (${playerType})`;
+            loadQuestionForStation(currentStationIndex);
+        }
+
+        function loadQuestionForStation(stationIdx) {
+            const station = stationsData[stationIdx];
+            const qList = station.questions;
+            currentQuestionObj = qList[Math.floor(Math.random() * qList.length)];
+            answeredCorrectly = false;
+
+            document.getElementById('quiz-image').src = station.image;
+            document.getElementById('quiz-title').innerText = station.title;
+            document.getElementById('quiz-question').innerText = currentQuestionObj.q;
+            
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+
+            currentQuestionObj.options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt.text;
+                btn.onclick = () => checkAnswer(i);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('quiz-feedback').style.display = 'none';
+            const actionBtn = document.getElementById('btn-action-btn');
+            actionBtn.style.display = 'none';
+            
+            document.getElementById('quiz-modal').style.display = 'flex';
+        }
+
+        function checkAnswer(optionIndex) {
+            const selectedOpt = currentQuestionObj.options[optionIndex];
+            const feedbackBox = document.getElementById('quiz-feedback');
+            const actionBtn = document.getElementById('btn-action-btn');
+            
+            document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+
+            if (selectedOpt.correct) {
+                answeredCorrectly = true;
+                feedbackBox.className = 'feedback-box correct';
+                feedbackBox.innerHTML = `✅ ¡Correcto! ${currentQuestionObj.explanation}`;
+                score += 20;
+                document.getElementById('hud-score').innerText = `⭐ Puntos: ${score}`;
+                actionBtn.innerText = "Continuar Camino por el Bosque 🌲";
+            } else {
+                answeredCorrectly = false;
+                feedbackBox.className = 'feedback-box incorrect';
+                feedbackBox.innerHTML = `❌ Incorrecto. ${currentQuestionObj.explanation}<br><br><b>¡Inténtalo de nuevo con otra pregunta de esta estación!</b>`;
+                actionBtn.innerText = "Intentar Otra Pregunta 🔄";
+            }
+
+            feedbackBox.style.display = 'block';
+            actionBtn.style.display = 'inline-block';
+        }
+
+        function handleModalAction() {
+            document.getElementById('quiz-modal').style.display = 'none';
+
+            if (answeredCorrectly) {
+                if (currentStationIndex < stationsData.length - 1) {
+                    isWalking = true;
+                    walkProgress = currentStationIndex / (stationsData.length - 1);
+                    currentStationIndex++;
+                    document.getElementById('hud-progress').innerText = `📍 Estación ${currentStationIndex + 1} / ${stationsData.length}`;
+                    
+                    stationMeshes.forEach((mesh, idx) => {
+                        if (idx === currentStationIndex) {
+                            mesh.material.color.setHex(0x34d399);
+                            mesh.material.emissive.setHex(0x059669);
+                        } else if (idx < currentStationIndex) {
+                            mesh.material.color.setHex(0x94a3b8);
+                            mesh.material.emissive.setHex(0x0f172a);
+                        }
+                    });
+                } else {
+                    document.getElementById('instruction-banner').style.display = 'none';
+                    document.getElementById('final-score').innerText = `Puntuación Final: ${score} ⭐`;
+                    document.getElementById('end-screen').style.display = 'flex';
+                }
+            } else {
+                loadQuestionForStation(currentStationIndex);
+            }
+        }
+
+        // --- BUCLE DE ANIMACIÓN ---
+        let clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            stationMeshes.forEach((mesh, i) => {
+                mesh.rotation.y += 0.01;
+                mesh.position.y = (pathPoints[i + 1].y + 1.2) + Math.sin(time * 2 + i) * 0.15;
+            });
+
+            if (isWalking) {
+                const targetProgress = currentStationIndex / (stationsData.length - 1);
+                walkProgress += delta * 0.25;
+
+                if (walkProgress >= targetProgress) {
+                    walkProgress = targetProgress;
+                    isWalking = false;
+                    loadQuestionForStation(currentStationIndex);
+                }
+
+                const currentPos = pathCurve.getPoint(walkProgress);
+                characterGroup.position.copy(currentPos);
+
+                const lookAtPos = pathCurve.getPoint(Math.min(walkProgress + 0.05, 1));
+                characterGroup.lookAt(lookAtPos);
+
+                leftLeg.rotation.x = Math.sin(time * 8) * 0.5;
+                rightLeg.rotation.x = -Math.sin(time * 8) * 0.5;
+                leftArm.rotation.x = -Math.sin(time * 8) * 0.5;
+                rightArm.rotation.x = Math.sin(time * 8) * 0.5;
+
+                camera.position.x = currentPos.x;
+                camera.position.z = currentPos.z - 12;
+                camera.lookAt(currentPos.x, currentPos.y + 2, currentPos.z + 2);
+            } else {
+                leftLeg.rotation.x = 0;
+                rightLeg.rotation.x = 0;
+                leftArm.rotation.x = 0;
+                rightArm.rotation.x = 0;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
